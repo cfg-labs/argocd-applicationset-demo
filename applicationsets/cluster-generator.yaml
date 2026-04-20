@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: webapp-cluster
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          argocd.argoproj.io/secret-type: cluster
+  template:
+    metadata:
+      name: 'webapp-{{name}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/cfg-labs/argocd-applicationset-demo
+        targetRevision: main
+        path: apps/webapp
+        helm:
+          releaseName: '{{name}}'
+          valueFiles:
+          - values.yaml
+          - 'values-{{metadata.labels.environment}}.yaml'
+      destination:
+        server: '{{server}}'
+        namespace: webapp
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

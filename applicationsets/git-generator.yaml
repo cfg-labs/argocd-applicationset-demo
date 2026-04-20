@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: webapp-git
+  namespace: argocd
+spec:
+  generators:
+  - git:
+      repoURL: https://github.com/cfg-labs/argocd-applicationset-demo
+      revision: main
+      directories:
+      - path: kustomize/overlays/*
+  template:
+    metadata:
+      name: 'webapp-{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/cfg-labs/argocd-applicationset-demo
+        targetRevision: main
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: 'webapp-{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

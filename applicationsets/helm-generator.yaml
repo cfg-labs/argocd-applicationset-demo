@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: webapp-helm-envs
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - env: prod
+        server: https://192.168.1.133:6443
+        replicas: '3'
+      - env: staging
+        server: https://192.168.1.134:6443
+        replicas: '2'
+      - env: dev
+        server: https://192.168.1.136:6443
+        replicas: '1'
+  template:
+    metadata:
+      name: 'webapp-helm-{{env}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/cfg-labs/argocd-applicationset-demo
+        targetRevision: main
+        path: apps/webapp
+        helm:
+          releaseName: 'webapp-{{env}}'
+          valueFiles:
+          - values.yaml
+          - 'values-{{env}}.yaml'
+      destination:
+        server: '{{server}}'
+        namespace: webapp
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

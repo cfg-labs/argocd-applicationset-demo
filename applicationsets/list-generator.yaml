@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: webapp-list
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: prod
+        url: https://192.168.1.133:6443
+        env: production
+        replicas: '3'
+      - cluster: staging
+        url: https://192.168.1.134:6443
+        env: staging
+        replicas: '2'
+      - cluster: dev
+        url: https://192.168.1.136:6443
+        env: development
+        replicas: '1'
+  template:
+    metadata:
+      name: 'webapp-{{cluster}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/cfg-labs/argocd-applicationset-demo
+        targetRevision: main
+        path: kustomize/overlays/{{cluster}}
+      destination:
+        server: '{{url}}'
+        namespace: webapp
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
